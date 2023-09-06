@@ -8,11 +8,6 @@ import com.pblgllgs.userservice.model.Bike;
 import com.pblgllgs.userservice.model.Car;
 import com.pblgllgs.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -40,31 +35,20 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List findAllCarsByUserId(int userId) {
-        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", "Bearer " + jwt.getTokenValue());
+    public List<Car> findAllCarsByUserId(int userId) {
         return restTemplate
-                .exchange(
+                .getForObject(
                         "http://car-service/car/byUser/" + userId,
-                        HttpMethod.GET,
-                        new HttpEntity<>(httpHeaders),
                         List.class
-                )
-                .getBody();
+                );
     }
 
-    public List findAllBikesByUserId(int userId) {
-        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization", "Bearer " + jwt.getTokenValue());
+    public List<Bike> findAllBikesByUserId(int userId) {
         return restTemplate
-                .exchange(
+                .getForObject(
                         "http://bike-service/bike/byUser/" + userId,
-                        HttpMethod.GET,
-                        new HttpEntity<>(httpHeaders),
                         List.class
-                ).getBody();
+                );
     }
 
     public Car saveCar(int userId, Car car) {
