@@ -8,6 +8,11 @@ import com.pblgllgs.userservice.model.Bike;
 import com.pblgllgs.userservice.model.Car;
 import com.pblgllgs.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -35,12 +40,31 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<Car> findAllCarsByUserId(int userId) {
-        return restTemplate.getForObject("http://car-service/car/byUser/" + userId, List.class);
+    public List findAllCarsByUserId(int userId) {
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Authorization", "Bearer " + jwt.getTokenValue());
+        return restTemplate
+                .exchange(
+                        "http://car-service/car/byUser/" + userId,
+                        HttpMethod.GET,
+                        new HttpEntity<>(httpHeaders),
+                        List.class
+                )
+                .getBody();
     }
 
-    public List<Bike> findAllBikesByUserId(int userId) {
-        return restTemplate.getForObject("http://bike-service/bike/byUser/" + userId, List.class);
+    public List findAllBikesByUserId(int userId) {
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Authorization", "Bearer " + jwt.getTokenValue());
+        return restTemplate
+                .exchange(
+                        "http://bike-service/bike/byUser/" + userId,
+                        HttpMethod.GET,
+                        new HttpEntity<>(httpHeaders),
+                        List.class
+                ).getBody();
     }
 
     public Car saveCar(int userId, Car car) {
@@ -65,7 +89,7 @@ public class UserService {
             throw new UserNotFoundException("User not found with id: " + userId);
         }
         Map<String, Object> vehicles = new HashMap<>();
-        vehicles.put("user",user);
+        vehicles.put("user", user);
         List<Bike> allBikesByUserId = bikeFeignClient.findAllBikesByUserId(userId);
         List<Car> allCarsByUserId = carFeignClient.findAllCarsByUserId(userId);
         if (allCarsByUserId.isEmpty()) {
